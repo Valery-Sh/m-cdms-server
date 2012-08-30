@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:security="http://www.springframework.org/schema/security"       
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+       http://www.springframework.org/schema/security
+       http://www.springframework.org/schema/security/spring-security-3.1.xsd">
+    
+
+
+    <!-- ADD PERSISTENCE SUPPORT HERE (jpa, hibernate, etc) -->
+
+    <bean id="dataSource" 
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource"> 
+        <property name="driverClassName" 
+                  value="oracle.jdbc.OracleDriver" /> 
+        <property name="url" 
+                  value="jdbc:oracle:thin:@localhost:1521:XE" /> 
+        <property name="username" value="hr" /> 
+        <property name="password" value="hr" /> 
+    </bean> 
+ 
+    <bean id="sessionFactory" 
+          class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean"> 
+        <property name="dataSource" ref="dataSource" /> 
+        <!--property name="configLocation" value="classpath:hibernate.cfg.xml" /--> 
+        <property name="annotatedClasses"> 
+            <list> 
+                <value>org.cdms.shared.entities.User</value> 
+                <value>org.cdms.shared.entities.Permission</value> 
+                <value>org.cdms.shared.entities.Customer</value> 
+                <value>org.cdms.shared.entities.Invoice</value>                 
+                <value>org.cdms.shared.entities.InvoiceItem</value>                 
+                <value>org.cdms.shared.entities.ProductItem</value>                 
+            </list> 
+        </property>         
+        <property name="hibernateProperties"> 
+            <props> 
+                <prop key="hibernate.dialect">org.hibernate.dialect.OracleDialect</prop> 
+                <prop key="hibernate.show_sql">true</prop> 
+            </props> 
+        </property>    
+    </bean> 
+
+    <!-- Configure HibenateTemplate -->
+    
+    <tx:annotation-driven /> 
+ 
+    <bean id="transactionManager" 
+          class="org.springframework.orm.hibernate3.HibernateTransactionManager"> 
+        <property name="sessionFactory" ref="sessionFactory" /> 
+    </bean> 
+    <bean id="hibernateTemplate" 
+          class="org.springframework.orm.hibernate3.HibernateTemplate"> 
+        <property name="sessionFactory" ref="sessionFactory" /> 
+    </bean> 
+        
+    <!--  Configure DAO objects  -->
+    
+    <bean id="userDao" 
+          class="org.cdms.domain.dao.hibernate.UserDaoImpl"> 
+        <property name="hibernateTemplate" ref="hibernateTemplate" /> 
+    </bean>     
+    <bean id="customerDao" 
+          class="org.cdms.domain.dao.hibernate.CustomerDaoImpl"> 
+        <property name="hibernateTemplate" ref="hibernateTemplate" /> 
+    </bean>     
+    <bean id="invoiceDao" 
+          class="org.cdms.domain.dao.hibernate.InvoiceDaoImpl"> 
+        <property name="hibernateTemplate" ref="hibernateTemplate" /> 
+    </bean>     
+    <bean id="invoiceItemDao" 
+          class="org.cdms.domain.dao.hibernate.InvoiceItemDaoImpl"> 
+        <property name="hibernateTemplate" ref="hibernateTemplate" /> 
+    </bean>     
+    
+    <bean id="productItemDao" 
+          class="org.cdms.domain.dao.hibernate.ProductItemDaoImpl"> 
+        <property name="hibernateTemplate" ref="hibernateTemplate" /> 
+    </bean>     
+
+    <bean id="invoiceStatisticsDao" 
+          class="org.cdms.domain.dao.hibernate.InvoiceStatisticsDaoImpl"> 
+        <property name="hibernateTemplate" ref="hibernateTemplate" /> 
+    </bean>     
+
+    <!-- VALIDATION. Configure JSR-303 Validation -->
+    
+    <bean id="validatorFactory" class="javax.validation.Validation"
+          factory-method="buildDefaultValidatorFactory"
+     />
+
+    <bean id="validator" factory-bean="validatorFactory"
+          factory-method="getValidator" 
+    />  
+    
+    <!-- Default Validation Handler based on constraint annotations -->
+      
+    <bean id="validationHandler" class="org.cdms.shared.remoting.validation.ValidationHandler">    
+        <property name="validator" ref="validator" /> 
+    </bean> 
+        
+    <!-- Default Exception Handler  -->
+      
+    <bean id="exceptionHandler" class="org.cdms.domain.dao.hibernate.RemoteExceptionHandlerImpl"/>    
+    
+    <!-- Configure UserService implementation class -->
+    
+    <bean id="userServiceImpl"
+          class="org.cdms.remoting.impl.UserServiceImpl">
+        <property name="userDao" ref="userDao" /> 
+        <property name="validationHandler" ref="validationHandler" /> 
+        <property name="exceptionHandler" ref="exceptionHandler" /> 
+        <!--property name="validator" ref="validator" /--> 
+        
+    </bean>
+    <!-- Configure CustomerService implementation class -->
+    
+    <bean id="customerServiceImpl"
+          class="org.cdms.remoting.impl.CustomerServiceImpl">
+        <property name="customerDao" ref="customerDao" /> 
+        <property name="validationHandler" ref="validationHandler" /> 
+        <property name="exceptionHandler" ref="exceptionHandler" /> 
+        
+    </bean>
+
+    <!-- Configure InvoiceService implementation class -->
+    
+    <bean id="invoiceServiceImpl"
+          class="org.cdms.remoting.impl.InvoiceServiceImpl">
+        <property name="invoiceDao" ref="invoiceDao" /> 
+        <property name="validationHandler" ref="validationHandler" /> 
+        <property name="exceptionHandler" ref="exceptionHandler" /> 
+        <!--property name="validator" ref="validator" /--> 
+        
+    </bean>
+    
+    <!-- Configure InvoiceService implementation class -->
+    
+    <bean id="invoiceItemServiceImpl"
+          class="org.cdms.remoting.impl.InvoiceItemServiceImpl">
+        <property name="invoiceItemDao" ref="invoiceItemDao" /> 
+        <property name="validationHandler" ref="validationHandler" /> 
+        <property name="exceptionHandler" ref="exceptionHandler" /> 
+    </bean>
+
+    <bean id="productItemServiceImpl"
+          class="org.cdms.remoting.impl.ProductItemServiceImpl">
+        <property name="productItemDao" ref="productItemDao" /> 
+        <property name="validationHandler" ref="validationHandler" /> 
+        <property name="exceptionHandler" ref="exceptionHandler" /> 
+    </bean>
+    
+    <bean id="invoiceStatisticsServiceImpl"
+          class="org.cdms.remoting.impl.InvoiceStatisticsServiceImpl">
+        <property name="invoiceStatisticsDao" ref="invoiceStatisticsDao" /> 
+        <property name="exceptionHandler" ref="exceptionHandler" /> 
+    </bean>
+                
+    <!-- Configure AuthService implementation class -->
+    
+    <bean id="authServiceImpl"
+          class="org.cdms.remoting.impl.AuthServiceImpl">
+        <!--property name="userService" ref="userServiceImpl" /--> 
+    </bean>
+    
+    <!-- Configure HessianServiceExporter for UserService  -->  
+    
+    <bean name="/UserService" 
+          class="org.springframework.remoting.caucho.HessianServiceExporter">
+        <property name="service">
+            <ref bean="userServiceImpl"/>
+        </property>
+        <property name="serviceInterface">
+            <!--value>org.cdms.domain.remoting.UserService</value-->
+            <value>org.cdms.shared.remoting.UserService</value>
+        </property>
+        <property name="registerTraceInterceptor">
+            <value>false</value>
+        </property>
+
+    </bean>
+
+    <!-- Configure HessianServiceExporter for CustomerService  -->  
+    
+    <bean name="/CustomerService" 
+          class="org.springframework.remoting.caucho.HessianServiceExporter">
+        <property name="service">
+            <ref bean="customerServiceImpl"/>
+        </property>
+        <property name="serviceInterface">
+            <value>org.cdms.shared.remoting.CustomerService</value>
+        </property>
+        <property name="registerTraceInterceptor">
+            <value>false</value>
+        </property>
+
+    </bean>
+
+    <!-- Configure HessianServiceExporter for InvoiceService  -->  
+    
+    <bean name="/InvoiceService" 
+          class="org.springframework.remoting.caucho.HessianServiceExporter">
+        <property name="service">
+            <ref bean="invoiceServiceImpl"/>
+        </property>
+        <property name="serviceInterface">
+            <!--value>org.cdms.domain.remoting.UserService</value-->
+            <value>org.cdms.shared.remoting.InvoiceService</value>
+        </property>
+        <property name="registerTraceInterceptor">
+            <value>false</value>
+        </property>
+
+    </bean>
+    
+    <!-- Configure HessianServiceExporter for InvoiceItemService  -->  
+    
+    <bean name="/InvoiceItemService" 
+          class="org.springframework.remoting.caucho.HessianServiceExporter">
+        <property name="service">
+            <ref bean="invoiceItemServiceImpl"/>
+        </property>
+        <property name="serviceInterface">
+            <value>org.cdms.shared.remoting.InvoiceItemService</value>
+        </property>
+        <property name="registerTraceInterceptor">
+            <value>false</value>
+        </property>
+
+    </bean>
+    
+
+    <!-- Configure HessianServiceExporter for ProductItemService  -->  
+    
+    <bean name="/ProductItemService" 
+          class="org.springframework.remoting.caucho.HessianServiceExporter">
+        <property name="service">
+            <ref bean="productItemServiceImpl"/>
+        </property>
+        <property name="serviceInterface">
+            <value>org.cdms.shared.remoting.ProductItemService</value>
+        </property>
+        <property name="registerTraceInterceptor">
+            <value>false</value>
+        </property>
+
+    </bean>
+
+    <bean name="/InvoiceStatisticsService" 
+          class="org.springframework.remoting.caucho.HessianServiceExporter">
+        <property name="service">
+            <ref bean="invoiceStatisticsServiceImpl"/>
+        </property>
+        <property name="serviceInterface">
+            <value>org.cdms.shared.remoting.InvoiceStatisticsService</value>
+        </property>
+        <property name="registerTraceInterceptor">
+            <value>false</value>
+        </property>
+
+    </bean>
+
+    <!-- Configure HessianServiceExporter for AuthService  -->  
+    
+    <bean name="/AuthService" 
+          class="org.springframework.remoting.caucho.HessianServiceExporter">
+        <property name="service">
+            <ref bean="authServiceImpl"/>
+        </property>
+        <property name="serviceInterface">
+            <value>org.cdms.shared.remoting.AuthService</value>
+        </property>
+        <property name="registerTraceInterceptor">
+            <value>false</value>
+        </property>
+
+    </bean>
+
+
+    <bean id="userDetailsServiceImpl"
+          class="org.cdms.auth.UserDetailsServiceImpl">
+         <property name="userService" ref="userServiceImpl" /> 
+    </bean>   
+    
+
+    <security:http>
+        <security:intercept-url access="ROLE_USER" pattern="/**" requires-channel="http"/>
+        <security:http-basic /> 
+    </security:http>
+
+    <bean id="daoAuthenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider">
+        <property name="userDetailsService" ref="userDetailsServiceImpl"/>
+    </bean>    
+    
+    <security:authentication-manager alias="authenticationManager">
+        <security:authentication-provider ref="daoAuthenticationProvider"/>
+    </security:authentication-manager>      
+                                
+</beans>
